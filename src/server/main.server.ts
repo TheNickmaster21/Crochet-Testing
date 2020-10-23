@@ -1,7 +1,8 @@
 import { OnHeartbeat, OnInit, ServerFramework as Framework, Service } from 'shared/framework';
 
-import t from '@rbxts/t';
-
+import {
+    StringCheckFunction, StringCheckFunctionWrapper, TestFunction, TestFunctionWrapper
+} from '../shared/remote-functions';
 import { ColorService } from './color.service';
 import { TestService } from './test.service';
 import { TimeService } from './time.service';
@@ -51,28 +52,9 @@ Framework.registerServices([
     TestService
 ]);
 
-let counter = 0;
+Framework.registerServerSideRemoteFunction<TestFunction>(TestFunctionWrapper);
 
-export type TestFunction = (test: string) => string;
-
-Framework.registerRemoteFunction<TestFunction>(
-    'TestFunction',
-    (player: Player, test: string) => {
-        print(`${player.Name} said ${test} (${++counter})`);
-        return 'test from server';
-    },
-    [t.string]
-);
-
-export type StringCheckFunction = (test: string) => boolean;
-
-Framework.registerRemoteFunction<StringCheckFunction>(
-    'StringCheckFunction',
-    (player: Player, test: string) => {
-        return true;
-    },
-    [t.string]
-);
+Framework.registerServerSideRemoteFunction<StringCheckFunction>(StringCheckFunctionWrapper);
 
 Framework.start();
 

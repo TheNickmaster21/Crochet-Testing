@@ -1,4 +1,4 @@
-import { ClientFunction, Service } from 'shared/framework';
+import { Service } from 'shared/framework';
 
 export class ColorService extends Service {
     public getBrickColors(): BrickColor[] {
@@ -9,5 +9,3 @@ export class ColorService extends Service {
         return [Color3.fromRGB(0, 0, 0), Color3.fromRGB(255, 255, 255)];
     }
 }
-
-export type ClientColorService = ClientFunction<ColorService>;
