@@ -16,6 +16,10 @@ export type ServerSideRemoteFunction<F> = F extends (...args: infer U) => infer 
     ? (player: Player, ...args: U) => R
     : never;
 
+export type ServerSideRemotePromiseFunction<F> = F extends (...args: infer U) => infer R
+    ? (player: Player, ...args: U) => Promise<R>
+    : never;
+
 export abstract class ServerSideRemoteFunctionWrapper<F extends Function> {
     abstract apply: ServerSideRemoteFunction<F>;
 
@@ -26,6 +30,9 @@ type ServerSideRemoteFunctionWrapperConstructor<F extends Function> = new () => 
 
 export type ClientSideRemoteFunction = Function;
 
+export type ClientSideRemotePromiseFunction<F> = F extends (...args: infer U) => infer R
+    ? (...args: U) => Promise<R>
+    : never;
 export abstract class ClientSideRemoteFunctionWrapper<F extends Function> {
     abstract apply: F;
 
@@ -107,6 +114,20 @@ export class ServerFramework {
         >;
     }
 
+    public static getClientSideRemotePromiseFunction<T extends ClientSideRemoteFunction>(
+        functionConstructor: ClientSideRemoteFunctionWrapperConstructor<T>
+    ): ServerSideRemotePromiseFunction<T> {
+        const name = tostring(functionConstructor);
+        const remoteFunction = this.functionFolder.FindFirstChild(name);
+        if (remoteFunction === undefined) throw `Could not find function ${name}!`;
+        return (((player: Player, ...args: unknown[]) =>
+            new Promise((resolve) => {
+                spawn(() => {
+                    resolve((remoteFunction as RemoteFunction).InvokeClient(player, ...args));
+                });
+            })) as unknown) as ServerSideRemotePromiseFunction<T>;
+    }
+
     public static start(): void {
         this.services.values().forEach((service) => {
             if ('onInit' in service) {
@@ -138,6 +159,21 @@ export class ClientFramework {
         const remoteFunction = this.functionFolder.FindFirstChild(name);
         if (remoteFunction === undefined) throw `Could not find function ${name}!`;
         return (((...args: unknown[]) => (remoteFunction as RemoteFunction).InvokeServer(...args)) as unknown) as T;
+    }
+
+    public static getServerSideRemotePromiseFunction<T extends ClientSideRemoteFunction>(
+        functionConstructor: ServerSideRemoteFunctionWrapperConstructor<T>
+    ): ClientSideRemotePromiseFunction<T> {
+        const name = tostring(functionConstructor);
+        const remoteFunction = this.functionFolder.FindFirstChild(name);
+        if (remoteFunction === undefined) throw `Could not find function ${name}!`;
+        return (((...args: unknown[]) => {
+            return new Promise((resolve) => {
+                spawn(() => {
+                    resolve((remoteFunction as RemoteFunction).InvokeServer(...args));
+                });
+            });
+        }) as unknown) as ClientSideRemotePromiseFunction<T>;
     }
 
     public static bindClientSideRemoteFunction<T extends Function>(
