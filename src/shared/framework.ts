@@ -95,15 +95,6 @@ export class ServerFramework {
         };
     }
 
-    public static registerClientSideRemoteFunction<T extends Function>(
-        functionConstructor: ClientSideRemoteFunctionWrapperConstructor<T>
-    ): void {
-        const name = tostring(functionConstructor);
-        const remoteFunction = new Instance('RemoteFunction');
-        remoteFunction.Name = name;
-        remoteFunction.Parent = this.functionFolder;
-    }
-
     public static getClientSideRemoteFunction<T extends ClientSideRemoteFunction>(
         functionConstructor: ClientSideRemoteFunctionWrapperConstructor<T>
     ): ServerSideRemoteFunction<T> {

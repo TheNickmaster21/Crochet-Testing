@@ -66,8 +66,10 @@ Framework.start();
 Framework.getService(TestLifeService).live();
 
 new Promise<void>((resolve) => {
+    const clientSideFunction = Framework.getClientSideRemoteFunction(TestClientFunctionWrapper);
+
     print(
-        `Client responded by saying: ${Framework.getClientSideRemoteFunction(TestClientFunctionWrapper)(
+        `Client responded by saying: ${clientSideFunction(
             game.GetService('Players').WaitForChild('TheNickmaster21') as Player,
             'hello TestClientFunctionWrapper!'
         )}`
