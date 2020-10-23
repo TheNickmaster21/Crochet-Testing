@@ -1,8 +1,9 @@
+import { TestClientFunctionWrapper } from 'shared/client-side-remote-functions';
 import { OnHeartbeat, OnInit, ServerFramework as Framework, Service } from 'shared/framework';
 
 import {
     StringCheckFunction, StringCheckFunctionWrapper, TestFunction, TestFunctionWrapper
-} from '../shared/remote-functions';
+} from '../shared/server-side-remote-functions';
 import { ColorService } from './color.service';
 import { TestService } from './test.service';
 import { TimeService } from './time.service';
@@ -52,12 +53,26 @@ Framework.registerServices([
     TestService
 ]);
 
-Framework.registerServerSideRemoteFunction<TestFunction>(TestFunctionWrapper);
+Framework.registerRemoteFunction(TestFunctionWrapper);
+Framework.bindServerSideRemoteFunction<TestFunction>(TestFunctionWrapper);
 
-Framework.registerServerSideRemoteFunction<StringCheckFunction>(StringCheckFunctionWrapper);
+Framework.registerRemoteFunction(StringCheckFunctionWrapper);
+Framework.bindServerSideRemoteFunction<StringCheckFunction>(StringCheckFunctionWrapper);
+
+Framework.registerRemoteFunction(TestClientFunctionWrapper);
 
 Framework.start();
 
 Framework.getService(TestLifeService).live();
+
+new Promise<void>((resolve) => {
+    print(
+        `Client responded by saying: ${Framework.getClientSideRemoteFunction(TestClientFunctionWrapper)(
+            game.GetService('Players').WaitForChild('TheNickmaster21') as Player,
+            'hello TestClientFunctionWrapper!'
+        )}`
+    );
+    resolve();
+});
 
 export default {};

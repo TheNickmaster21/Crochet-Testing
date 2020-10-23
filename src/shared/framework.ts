@@ -16,25 +16,23 @@ export type ServerSideRemoteFunction<F> = F extends (...args: infer U) => infer 
     ? (player: Player, ...args: U) => R
     : never;
 
-export abstract class ServerSideRemoteFunctionWrapper<F> {
+export abstract class ServerSideRemoteFunctionWrapper<F extends Function> {
     abstract apply: ServerSideRemoteFunction<F>;
 
     abstract typeChecks: t.check<unknown>[];
 }
 
-type ServerSideRemoteFunctionWrapperConstructor<F> = new () => ServerSideRemoteFunctionWrapper<F>;
+type ServerSideRemoteFunctionWrapperConstructor<F extends Function> = new () => ServerSideRemoteFunctionWrapper<F>;
 
 export type ClientSideRemoteFunction = Function;
 
-export abstract class ClientSideRemoteFunctionWrapper<F extends ClientSideRemoteFunction> {
+export abstract class ClientSideRemoteFunctionWrapper<F extends Function> {
     abstract apply: F;
 
     abstract typeChecks: t.check<unknown>[];
 }
 
-type ClientSideRemoteFunctionWrapperConstructor<
-    F extends ClientSideRemoteFunction
-> = new () => ClientSideRemoteFunctionWrapper<F>;
+type ClientSideRemoteFunctionWrapperConstructor<F extends Function> = new () => ClientSideRemoteFunctionWrapper<F>;
 
 const FRAMEWORK_FOLDER_NAME = 'Framework';
 
@@ -68,14 +66,26 @@ export class ServerFramework {
         return this.services.get(serviceKey) as InstanceType<S>;
     }
 
-    public static registerServerSideRemoteFunction<T extends Function>(
-        functionConstructor: ServerSideRemoteFunctionWrapperConstructor<T>
+    public static registerRemoteFunction<T extends Function>(
+        functionConstructor:
+            | ServerSideRemoteFunctionWrapperConstructor<T>
+            | ClientSideRemoteFunctionWrapperConstructor<T>
     ): void {
         const name = tostring(functionConstructor);
-        const func = new functionConstructor();
         const remoteFunction = new Instance('RemoteFunction');
         remoteFunction.Name = name;
         remoteFunction.Parent = this.functionFolder;
+    }
+
+    public static bindServerSideRemoteFunction<T extends Function>(
+        functionConstructor: ServerSideRemoteFunctionWrapperConstructor<T>
+    ): void {
+        const name = tostring(functionConstructor);
+        const remoteFunction = this.functionFolder.FindFirstChild(name) as RemoteFunction;
+        if (remoteFunction === undefined)
+            throw `Functions must be registered before being bound; not function found for ${name}`;
+        const func = new functionConstructor();
+
         remoteFunction.OnServerInvoke = (player: Player, ...args: unknown[]) => {
             if (args.size() !== func.typeChecks.size()) throw `Wrong number of arguments for function ${name}`;
             func.typeChecks.forEach((tCheck, i) => {
@@ -94,14 +104,17 @@ export class ServerFramework {
         remoteFunction.Parent = this.functionFolder;
     }
 
-    // public static getClientSideRemoteFunction<T extends ServerSideRemoteFunction>(
-    //     functionConstructor: ClientSideRemoteFunctionWrapperConstructor<T>
-    // ): T {
-    //     const name = tostring(functionConstructor);
-    //     const remoteFunction = this.functionFolder.FindFirstChild(name);
-    //     if (remoteFunction === undefined) throw `Could not find function ${name}!`;
-    //     return (((...args: unknown[]) => (remoteFunction as RemoteFunction).InvokeServer(...args)) as unknown) as T;
-    // }
+    public static getClientSideRemoteFunction<T extends ClientSideRemoteFunction>(
+        functionConstructor: ClientSideRemoteFunctionWrapperConstructor<T>
+    ): ServerSideRemoteFunction<T> {
+        const name = tostring(functionConstructor);
+        const remoteFunction = this.functionFolder.FindFirstChild(name);
+        if (remoteFunction === undefined) throw `Could not find function ${name}!`;
+        return (((player: Player, ...args: unknown[]) =>
+            (remoteFunction as RemoteFunction).InvokeClient(player, ...args)) as unknown) as ServerSideRemoteFunction<
+            T
+        >;
+    }
 
     public static start(): void {
         this.services.values().forEach((service) => {
@@ -136,20 +149,21 @@ export class ClientFramework {
         return (((...args: unknown[]) => (remoteFunction as RemoteFunction).InvokeServer(...args)) as unknown) as T;
     }
 
-    // public static registerClientSideRemoteFunction<T extends Function>(
-    //     functionConstructor: ServerSideRemoteFunctionWrapperConstructor<T>
-    // ): void {
-    //     const name = tostring(functionConstructor);
-    //     const func = new functionConstructor();
-    //     const remoteFunction = new Instance('RemoteFunction');
-    //     remoteFunction.Name = name;
-    //     remoteFunction.Parent = this.functionFolder;
-    //     remoteFunction.OnServerInvoke = (player: Player, ...args: unknown[]) => {
-    //         if (args.size() !== func.typeChecks.size()) throw `Wrong number of arguments for function ${name}`;
-    //         func.typeChecks.forEach((tCheck, i) => {
-    //             if (!tCheck(args[i])) throw `Invalid argument for function ${name} at index ${i}`;
-    //         });
-    //         return func.apply(player, ...args);
-    //     };
-    // }
+    public static bindClientSideRemoteFunction<T extends Function>(
+        functionConstructor: ClientSideRemoteFunctionWrapperConstructor<T>
+    ): void {
+        const name = tostring(functionConstructor);
+        const remoteFunction = this.functionFolder.FindFirstChild(name) as RemoteFunction;
+        if (remoteFunction === undefined)
+            throw `Functions must be registered before being bound; not function found for ${name}`;
+        const func = new functionConstructor();
+
+        remoteFunction.OnClientInvoke = (...args: unknown[]) => {
+            if (args.size() !== func.typeChecks.size()) throw `Wrong number of arguments for function ${name}`;
+            func.typeChecks.forEach((tCheck, i) => {
+                if (!tCheck(args[i])) throw `Invalid argument for function ${name} at index ${i}`;
+            });
+            return func.apply(...args);
+        };
+    }
 }

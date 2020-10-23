@@ -9,7 +9,7 @@ export class TestFunctionWrapper extends ServerSideRemoteFunctionWrapper<TestFun
 
     apply = (player: Player, test: string) => {
         print(`${player.Name} said ${test} (${++this.counter})`);
-        return 'test from server';
+        return 'reply from TestFunctionWrapper';
     };
 
     typeChecks = [t.string];
