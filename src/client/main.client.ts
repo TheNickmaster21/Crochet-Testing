@@ -1,21 +1,22 @@
-import { TestClientFunction, TestClientFunctionWrapper } from 'shared/client-side-remote-functions';
+import { TestClientFunction } from 'shared/client-side-remote-functions';
 import { ClientFramework as Framework } from 'shared/framework';
-import {
-    StringCheckFunction, StringCheckFunctionWrapper, TestFunction, TestFunctionWrapper
-} from 'shared/server-side-remote-functions';
+import { StringCheckFunction, TestFunction } from 'shared/server-side-remote-functions';
 
 Framework.started().then(() => {
     print('Client Framework Initialized');
-    Framework.bindClientSideRemoteFunction<TestClientFunction>(TestClientFunctionWrapper);
 
-    const testFunction = Framework.getServerSideRemoteFunction<TestFunction>(TestFunctionWrapper);
+    let counter = 0;
+    Framework.bindClientSideRemoteFunction(TestClientFunction, (test: string) => {
+        print(`server said ${test} (${++counter})`);
+        return 'reply from TestClientFunctionWrapper';
+    });
+
+    const testFunction = Framework.getServerSideRemoteFunction(TestFunction);
     print(`Server replied ${testFunction('test 2 from client')}`);
-    const stringCheckFunction = Framework.getServerSideRemoteFunction<StringCheckFunction>(StringCheckFunctionWrapper);
+    const stringCheckFunction = Framework.getServerSideRemoteFunction(StringCheckFunction);
     print(stringCheckFunction('abcd'));
 
-    const stringCheckPromiseFunction = Framework.getServerSideRemotePromiseFunction<StringCheckFunction>(
-        StringCheckFunctionWrapper
-    );
+    const stringCheckPromiseFunction = Framework.getServerSideRemotePromiseFunction(StringCheckFunction);
 
     print('point 1');
     stringCheckPromiseFunction('abc').then(() => print('point 2'));

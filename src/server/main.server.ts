@@ -1,9 +1,9 @@
-import { TestClientFunctionWrapper } from 'shared/client-side-remote-functions';
+import { TestClientFunction } from 'shared/client-side-remote-functions';
 import { OnHeartbeat, OnInit, ServerFramework as Framework, Service } from 'shared/framework';
 
-import {
-    StringCheckFunction, StringCheckFunctionWrapper, TestFunction, TestFunctionWrapper
-} from '../shared/server-side-remote-functions';
+import t from '@rbxts/t';
+
+import { StringCheckFunction, TestFunction } from '../shared/server-side-remote-functions';
 import { ColorService } from './color.service';
 import { TestService } from './test.service';
 import { TimeService } from './time.service';
@@ -53,20 +53,26 @@ Framework.registerServices([
     TestService
 ]);
 
-Framework.registerRemoteFunction(TestFunctionWrapper);
-Framework.bindServerSideRemoteFunction<TestFunction>(TestFunctionWrapper);
+Framework.registerRemoteFunction(TestFunction);
+let counter = 0;
+Framework.bindServerSideRemoteFunction(TestFunction, (player: Player, test: string) => {
+    print(`${player.Name} said ${test} (${++counter})`);
+    return 'reply from TestFunctionWrapper';
+});
 
-Framework.registerRemoteFunction(StringCheckFunctionWrapper);
-Framework.bindServerSideRemoteFunction<StringCheckFunction>(StringCheckFunctionWrapper);
+Framework.registerRemoteFunction(StringCheckFunction);
+Framework.bindServerSideRemoteFunction(StringCheckFunction, (player: Player, test: string) => {
+    return t.string(test);
+});
 
-Framework.registerRemoteFunction(TestClientFunctionWrapper);
+Framework.registerRemoteFunction(TestClientFunction);
 
 Framework.start();
 
 Framework.getService(TestLifeService).live();
 
 new Promise<void>((resolve) => {
-    const clientSideFunction = Framework.getClientSideRemoteFunction(TestClientFunctionWrapper);
+    const clientSideFunction = Framework.getClientSideRemoteFunction(TestClientFunction);
 
     print(
         `Client responded by saying: ${clientSideFunction(

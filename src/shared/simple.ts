@@ -1,34 +1,25 @@
-// In shared
-import {
-    ClientFramework, ClientSideRemoteFunctionWrapper, ServerFramework
-} from 'shared/framework';
-
-import t from '@rbxts/t';
+import { ClientFramework, FunctionDefinition, ServerFramework } from 'shared/framework';
 
 // In shared
 
-export class TestClientFunctionWrapper extends ClientSideRemoteFunctionWrapper<(simple: string) => number> {
-    apply = (simple: string) => {
-        return simple.size();
-    };
-
-    typeChecks = [t.string];
-}
+export const TestClientFunction = new FunctionDefinition<[string], number>();
 
 // In client
 
 ClientFramework.started().then(() => {
     print('Client Framework Initialized');
-    ClientFramework.bindClientSideRemoteFunction(TestClientFunctionWrapper);
+    ClientFramework.bindClientSideRemoteFunction(TestClientFunction, (param: string) => {
+        return param.size();
+    });
 });
 
 // In server
 
-ServerFramework.registerRemoteFunction(TestClientFunctionWrapper);
+ServerFramework.registerRemoteFunction(TestClientFunction);
 
 ServerFramework.start();
 
-const clientSideFunction = ServerFramework.getClientSideRemoteFunction(TestClientFunctionWrapper);
+const clientSideFunction = ServerFramework.getClientSideRemoteFunction(TestClientFunction);
 clientSideFunction(
     game.GetService('Players').WaitForChild('TheNickmaster21') as Player,
     'hello TestClientFunctionWrapper!'
