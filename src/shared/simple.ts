@@ -2,7 +2,7 @@ import { ClientFramework, FunctionDefinition, ServerFramework } from 'shared/fra
 
 // In shared
 
-export const TestClientFunction = new FunctionDefinition<[string], number>();
+export const TestClientFunction = new FunctionDefinition<[string], number>('TestClientFunction');
 
 // In client
 

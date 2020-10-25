@@ -11,92 +11,95 @@ export abstract class Service {}
 type ServiceConstructor = new (...services: Service[]) => Service;
 
 export class FunctionDefinition<A extends unknown[], R> {
-    private static globalId = 0;
+    private static functionDefinitionNames = new Set<string>();
 
-    private static getId(): number {
-        return ++FunctionDefinition.globalId;
-    }
-
-    public functionIdentifier: string;
-
-    constructor(functionIdentifier?: string) {
-        if (functionIdentifier === undefined) {
-            this.functionIdentifier = tostring(FunctionDefinition.getId());
-        } else {
-            this.functionIdentifier = functionIdentifier;
+    constructor(public functionIdentifier: string) {
+        if (FunctionDefinition.functionDefinitionNames.has(functionIdentifier)) {
+            throw `There is already a function defined with the identifier: ${functionIdentifier}`;
         }
+        FunctionDefinition.functionDefinitionNames.add(functionIdentifier);
     }
 }
 
 const FRAMEWORK_FOLDER_NAME = 'Framework';
 
-export class ServerFramework {
-    private static frameworkFolder: Folder;
-    private static functionFolder: Folder;
-    private static services = new Map<string, Service>();
+export abstract class CoreFramework {
+    protected frameworkFolder?: Folder;
+    protected functionFolder?: Folder;
 
-    private constructor() {}
+    protected fetchFunctionWithDefinition(
+        functionDefinition: FunctionDefinition<unknown[], unknown>
+    ): RemoteFunction | BindableFunction {
+        const name = functionDefinition.functionIdentifier;
+        const func = this.functionFolder!.FindFirstChild(name);
+        if (func === undefined) throw `Could not find function with identifier ${name}!`;
+        return func as RemoteFunction | BindableFunction;
+    }
+}
 
-    public static setup(): void {
+class ServerFrameworkImpl extends CoreFramework {
+    private services = new Map<string, Service>();
+
+    public constructor() {
+        super();
+
         this.frameworkFolder = new Instance('Folder');
         this.frameworkFolder.Name = FRAMEWORK_FOLDER_NAME;
         this.functionFolder = new Instance('Folder', this.frameworkFolder);
         this.functionFolder.Name = 'Functions';
     }
 
-    public static registerServices(serviceConstructors: ServiceConstructor[]): void {
+    public setup(): void {
+        const setup = new Instance('BoolValue');
+        setup.Name = 'Setup';
+        setup.Parent = script.Parent;
+    }
+
+    public registerServices(serviceConstructors: ServiceConstructor[]): void {
         serviceConstructors.forEach((serviceConstructor) => this.registerService(serviceConstructor));
     }
 
-    public static registerService(serviceConstructor: ServiceConstructor): void {
+    public registerService(serviceConstructor: ServiceConstructor): void {
         const serviceKey = tostring(serviceConstructor);
         if (this.services.has(serviceKey)) throw `Duplicate service for name ${serviceKey}!`;
         this.services.set(tostring(serviceConstructor), new serviceConstructor());
     }
 
-    public static getService<S extends ServiceConstructor>(serviceConstructor: S): InstanceType<S> {
+    public getService<S extends ServiceConstructor>(serviceConstructor: S): InstanceType<S> {
         const serviceKey = tostring(serviceConstructor);
         if (!this.services.has(serviceKey)) throw `No service registered for name ${serviceKey}!`;
         return this.services.get(serviceKey) as InstanceType<S>;
     }
 
-    public static registerRemoteFunction<A extends unknown[], R>(functionDefinition: FunctionDefinition<A, R>): void {
+    public registerRemoteFunction<A extends unknown[], R>(functionDefinition: FunctionDefinition<A, R>): void {
         const name = functionDefinition.functionIdentifier;
         const remoteFunction = new Instance('RemoteFunction');
         remoteFunction.Name = name;
         remoteFunction.Parent = this.functionFolder;
     }
 
-    public static bindServerSideRemoteFunction<A extends unknown[], R>(
+    public bindServerSideRemoteFunction<A extends unknown[], R>(
         functionDefinition: FunctionDefinition<A, R>,
         functionBinding: (player: Player, ...args: A) => R
     ): void {
-        const name = functionDefinition.functionIdentifier;
-        const remoteFunction = this.functionFolder.FindFirstChild(name) as RemoteFunction;
-        if (remoteFunction === undefined)
-            throw `Functions must be registered before being bound; not function found for ${name}`;
-
+        const remoteFunction = this.fetchFunctionWithDefinition(functionDefinition) as RemoteFunction;
         remoteFunction.OnServerInvoke = functionBinding as (player: Player, ...args: unknown[]) => unknown;
     }
 
-    public static getClientSideRemoteFunction<A extends unknown[], R>(
+    public getClientSideRemoteFunction<A extends unknown[], R>(
         functionDefinition: FunctionDefinition<A, R>
     ): (player: Player, ...args: A) => R {
-        const name = functionDefinition.functionIdentifier;
-        const remoteFunction = this.functionFolder.FindFirstChild(name) as RemoteFunction;
-        if (remoteFunction === undefined) throw `Could not find function ${name}!`;
+        const remoteFunction = this.fetchFunctionWithDefinition(functionDefinition) as RemoteFunction;
         return ((player: Player, ...args: A) => remoteFunction.InvokeClient(player, ...args)) as (
             player: Player,
             ...args: A
         ) => R;
     }
 
-    public static getClientSideRemotePromiseFunction<A extends unknown[], R>(
+    public getClientSideRemotePromiseFunction<A extends unknown[], R>(
         functionDefinition: FunctionDefinition<A, R>
     ): (player: Player, ...args: A) => Promise<R> {
-        const name = functionDefinition.functionIdentifier;
-        const remoteFunction = this.functionFolder.FindFirstChild(name) as RemoteFunction;
-        if (remoteFunction === undefined) throw `Could not find function ${name}!`;
+        const remoteFunction = this.fetchFunctionWithDefinition(functionDefinition) as RemoteFunction;
         return (player: Player, ...args: unknown[]) => {
             return new Promise((resolve) =>
                 Promise.spawn(() => resolve(remoteFunction.InvokeClient(player, ...args) as R))
@@ -104,7 +107,32 @@ export class ServerFramework {
         };
     }
 
-    public static start(): void {
+    public registerBindableFunction<A extends unknown[], R>(functionDefinition: FunctionDefinition<A, R>): void {
+        const name = functionDefinition.functionIdentifier;
+        const remoteFunction = new Instance('BindableFunction');
+        remoteFunction.Name = name;
+        remoteFunction.Parent = this.functionFolder;
+    }
+
+    public bindBindableFunction<A extends unknown[], R>(
+        functionDefinition: FunctionDefinition<A, R>,
+        functionBinding: (...args: A) => R
+    ): void {
+        const bindableFunction = this.fetchFunctionWithDefinition(functionDefinition) as BindableFunction;
+        bindableFunction.OnInvoke = functionBinding as (...args: unknown[]) => unknown;
+    }
+
+    public getBindableFunction<A extends unknown[], R>(
+        functionDefinition: FunctionDefinition<A, R>
+    ): (player: Player, ...args: A) => R {
+        const bindableFunction = this.fetchFunctionWithDefinition(functionDefinition) as BindableFunction;
+        return ((player: Player, ...args: A) => bindableFunction.Invoke(player, ...args)) as (
+            player: Player,
+            ...args: A
+        ) => R;
+    }
+
+    public start(): void {
         this.services.values().forEach((service) => {
             if ('onInit' in service) {
                 (service as OnInit).onInit();
@@ -114,49 +142,58 @@ export class ServerFramework {
             }
         });
 
-        this.frameworkFolder.Parent = script.Parent;
+        this.frameworkFolder!.Parent = script.Parent;
     }
 }
 
-export class ClientFramework {
-    private static frameworkFolder: Folder;
-    private static functionFolder: Folder;
-    private constructor() {}
+class ClientFrameworkImpl extends CoreFramework {
+    public constructor() {
+        super();
 
-    public static async started(): Promise<void> {
         this.frameworkFolder = script.Parent?.WaitForChild(FRAMEWORK_FOLDER_NAME) as Folder;
         this.functionFolder = this.frameworkFolder.WaitForChild('Functions') as Folder;
     }
 
-    public static getServerSideRemoteFunction<A extends unknown[], R>(
+    public async started(): Promise<void> {
+        return new Promise<void>((resolve) =>
+            Promise.spawn(() => {
+                script.Parent?.WaitForChild('Setup');
+                resolve();
+            })
+        );
+    }
+
+    public getServerSideRemoteFunction<A extends unknown[], R>(
         functionDefinition: FunctionDefinition<A, R>
     ): (...args: A) => R {
-        const name = functionDefinition.functionIdentifier;
-        const remoteFunction = this.functionFolder.FindFirstChild(name) as RemoteFunction;
-        if (remoteFunction === undefined) throw `Could not find function ${name}!`;
+        const remoteFunction = this.fetchFunctionWithDefinition(functionDefinition) as RemoteFunction;
         return ((...args: A) => remoteFunction.InvokeServer(...args)) as (...args: A) => R;
     }
 
-    public static getServerSideRemotePromiseFunction<A extends unknown[], R>(
+    public getServerSideRemotePromiseFunction<A extends unknown[], R>(
         functionDefinition: FunctionDefinition<A, R>
     ): (...args: A) => Promise<R> {
-        const name = functionDefinition.functionIdentifier;
-        const remoteFunction = this.functionFolder.FindFirstChild(name) as RemoteFunction;
-        if (remoteFunction === undefined) throw `Could not find function ${name}!`;
+        const remoteFunction = this.fetchFunctionWithDefinition(functionDefinition) as RemoteFunction;
         return (...args: unknown[]) => {
             return new Promise((resolve) => Promise.spawn(() => resolve(remoteFunction.InvokeServer(...args) as R)));
         };
     }
 
-    public static bindClientSideRemoteFunction<A extends unknown[], R>(
+    public bindClientSideRemoteFunction<A extends unknown[], R>(
         functionDefinition: FunctionDefinition<A, R>,
         functionBinding: (...args: A) => R
     ): void {
-        const name = functionDefinition.functionIdentifier;
-        const remoteFunction = this.functionFolder.FindFirstChild(name) as RemoteFunction;
-        if (remoteFunction === undefined)
-            throw `Functions must be registered before being bound; not function found for ${name}`;
-
+        const remoteFunction = this.fetchFunctionWithDefinition(functionDefinition) as RemoteFunction;
         remoteFunction.OnClientInvoke = functionBinding as (...args: unknown[]) => unknown;
     }
 }
+
+const RunService = game.GetService('RunService');
+
+export const ServerFramework = RunService.IsServer()
+    ? new ServerFrameworkImpl()
+    : undefined as unknown as ServerFrameworkImpl;
+
+export const ClientFramework = RunService.IsClient()
+    ? new ClientFrameworkImpl()
+    : undefined as unknown as ClientFrameworkImpl;
