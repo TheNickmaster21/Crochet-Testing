@@ -27,6 +27,28 @@ export abstract class CoreFramework {
     protected frameworkFolder?: Folder;
     protected functionFolder?: Folder;
 
+    public registerBindableFunction<A extends unknown[], R>(functionDefinition: FunctionDefinition<A, R>): void {
+        const name = functionDefinition.functionIdentifier;
+        const remoteFunction = new Instance('BindableFunction');
+        remoteFunction.Name = name;
+        remoteFunction.Parent = this.functionFolder;
+    }
+
+    public bindBindableFunction<A extends unknown[], R>(
+        functionDefinition: FunctionDefinition<A, R>,
+        functionBinding: (...args: A) => R
+    ): void {
+        const bindableFunction = this.fetchFunctionWithDefinition(functionDefinition) as BindableFunction;
+        bindableFunction.OnInvoke = functionBinding as (...args: unknown[]) => unknown;
+    }
+
+    public getBindableFunction<A extends unknown[], R>(
+        functionDefinition: FunctionDefinition<A, R>
+    ): (...args: A) => R {
+        const bindableFunction = this.fetchFunctionWithDefinition(functionDefinition) as BindableFunction;
+        return ((...args: A) => bindableFunction.Invoke(...args)) as (...args: A) => R;
+    }
+
     protected fetchFunctionWithDefinition(
         functionDefinition: FunctionDefinition<unknown[], unknown>
     ): RemoteFunction | BindableFunction {
@@ -107,31 +129,6 @@ class ServerFrameworkImpl extends CoreFramework {
         };
     }
 
-    public registerBindableFunction<A extends unknown[], R>(functionDefinition: FunctionDefinition<A, R>): void {
-        const name = functionDefinition.functionIdentifier;
-        const remoteFunction = new Instance('BindableFunction');
-        remoteFunction.Name = name;
-        remoteFunction.Parent = this.functionFolder;
-    }
-
-    public bindBindableFunction<A extends unknown[], R>(
-        functionDefinition: FunctionDefinition<A, R>,
-        functionBinding: (...args: A) => R
-    ): void {
-        const bindableFunction = this.fetchFunctionWithDefinition(functionDefinition) as BindableFunction;
-        bindableFunction.OnInvoke = functionBinding as (...args: unknown[]) => unknown;
-    }
-
-    public getBindableFunction<A extends unknown[], R>(
-        functionDefinition: FunctionDefinition<A, R>
-    ): (player: Player, ...args: A) => R {
-        const bindableFunction = this.fetchFunctionWithDefinition(functionDefinition) as BindableFunction;
-        return ((player: Player, ...args: A) => bindableFunction.Invoke(player, ...args)) as (
-            player: Player,
-            ...args: A
-        ) => R;
-    }
-
     public start(): void {
         this.services.values().forEach((service) => {
             if ('onInit' in service) {
@@ -192,8 +189,8 @@ const RunService = game.GetService('RunService');
 
 export const ServerFramework = RunService.IsServer()
     ? new ServerFrameworkImpl()
-    : undefined as unknown as ServerFrameworkImpl;
+    : ((undefined as unknown) as ServerFrameworkImpl);
 
 export const ClientFramework = RunService.IsClient()
     ? new ClientFrameworkImpl()
-    : undefined as unknown as ClientFrameworkImpl;
+    : ((undefined as unknown) as ClientFrameworkImpl);

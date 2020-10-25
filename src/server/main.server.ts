@@ -1,5 +1,7 @@
 import { TestClientFunction } from 'shared/client-side-remote-functions';
-import { OnHeartbeat, OnInit, ServerFramework as Framework, Service } from 'shared/framework';
+import {
+    FunctionDefinition, OnHeartbeat, OnInit, ServerFramework as Framework, Service
+} from 'shared/framework';
 
 import t from '@rbxts/t';
 
@@ -67,6 +69,10 @@ Framework.bindServerSideRemoteFunction(StringCheckFunction, (player: Player, tes
 
 Framework.registerRemoteFunction(TestClientFunction);
 
+const ServerBindableFunction = new FunctionDefinition<[number, number], number>('ServerBindableFunction');
+Framework.registerBindableFunction(ServerBindableFunction);
+Framework.bindBindableFunction(ServerBindableFunction, (a: number, b: number) => a * b);
+
 Framework.start();
 
 Framework.getService(TestLifeService).live();
@@ -82,5 +88,7 @@ new Promise<void>((resolve) => {
     );
     resolve();
 });
+
+print(`2x4=${Framework.getBindableFunction(ServerBindableFunction)(2, 4)}`);
 
 export default {};
