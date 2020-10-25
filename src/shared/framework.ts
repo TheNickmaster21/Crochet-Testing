@@ -8,7 +8,11 @@ export interface OnHeartbeat {
 
 export abstract class Service {}
 
-type ServiceConstructor = new (...services: Service[]) => Service;
+type ServiceConstructor = new () => Service;
+
+export abstract class Controller {}
+
+type ControllerConstructor = new () => Controller;
 
 export class FunctionDefinition<A extends unknown[], R> {
     private static functionDefinitionNames = new Set<string>();
@@ -144,6 +148,8 @@ class ServerFrameworkImpl extends CoreFramework {
 }
 
 class ClientFrameworkImpl extends CoreFramework {
+    private controllers = new Map<string, Controller>();
+
     public constructor() {
         super();
 
@@ -158,6 +164,22 @@ class ClientFrameworkImpl extends CoreFramework {
                 resolve();
             })
         );
+    }
+
+    public registerControllers(controllerConstructors: ControllerConstructor[]): void {
+        controllerConstructors.forEach((controllerConstructor) => this.registerController(controllerConstructor));
+    }
+
+    public registerController(controllerConstructor: ControllerConstructor): void {
+        const controllerKey = tostring(controllerConstructor);
+        if (this.controllers.has(controllerKey)) throw `Duplicate controller for name ${controllerKey}!`;
+        this.controllers.set(tostring(controllerConstructor), new controllerConstructor());
+    }
+
+    public getController<S extends ControllerConstructor>(controllerConstructor: S): InstanceType<S> {
+        const controllerKey = tostring(controllerConstructor);
+        if (!this.controllers.has(controllerKey)) throw `No controller registered for name ${controllerKey}!`;
+        return this.controllers.get(controllerKey) as InstanceType<S>;
     }
 
     public getServerSideRemoteFunction<A extends unknown[], R>(

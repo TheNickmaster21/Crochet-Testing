@@ -1,5 +1,5 @@
 import { TestClientFunction } from 'shared/client-side-remote-functions';
-import { ClientFramework as Framework, FunctionDefinition } from 'shared/framework';
+import { ClientFramework as Framework, Controller, FunctionDefinition } from 'shared/framework';
 import { StringCheckFunction, TestFunction } from 'shared/server-side-remote-functions';
 
 Framework.started().await();
@@ -28,5 +28,15 @@ Framework.registerBindableFunction(ClientBindableFunction);
 Framework.bindBindableFunction(ClientBindableFunction, (a: number, b: number) => a * b);
 
 print(`3x6=${Framework.getBindableFunction(ClientBindableFunction)(3, 6)}`);
+
+class TestController extends Controller {
+    public test(): void {
+        print('I have been tested');
+    }
+}
+
+Framework.registerController(TestController);
+
+Framework.getController(TestController).test();
 
 export default {};
