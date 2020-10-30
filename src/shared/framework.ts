@@ -177,6 +177,36 @@ class ServerFrameworkImpl extends CoreFramework {
         };
     }
 
+    public registerRemoteEvent<A extends unknown[]>(eventDefinition: EventDefinition<A>): void {
+        const name = eventDefinition.eventIdentifier;
+        const remoteEvent = new Instance('RemoteEvent');
+        remoteEvent.Name = name;
+        remoteEvent.Parent = this.eventFolder;
+    }
+
+    public bindRemoteEvent<A extends unknown[]>(
+        eventDefinition: EventDefinition<A>,
+        functionBinding: (player: Player, ...args: A) => void
+    ): RBXScriptConnection {
+        const remoteEvent = this.fetchEventWithDefinition(eventDefinition) as RemoteEvent;
+        return remoteEvent.OnServerEvent.Connect(functionBinding as (player: Player, ...args: unknown[]) => void);
+    }
+
+    public getRemoteEventFunction<A extends unknown[]>(
+        eventDefinition: EventDefinition<A>
+    ): (player: Player, ...args: A) => void {
+        const remoteEvent = this.fetchEventWithDefinition(eventDefinition) as RemoteEvent;
+        return ((player: Player, ...args: A) => remoteEvent.FireClient(player, ...args)) as (
+            player: Player,
+            ...args: A
+        ) => void;
+    }
+
+    public getRemoteEventAllFunction<A extends unknown[]>(eventDefinition: EventDefinition<A>): (...args: A) => void {
+        const remoteEvent = this.fetchEventWithDefinition(eventDefinition) as RemoteEvent;
+        return ((...args: A) => remoteEvent.FireAllClients(...args)) as (...args: A) => void;
+    }
+
     public start(): void {
         this.services.values().forEach((service) => {
             if ('onInit' in service) {
@@ -249,6 +279,19 @@ class ClientFrameworkImpl extends CoreFramework {
     ): void {
         const remoteFunction = this.fetchFunctionWithDefinition(functionDefinition) as RemoteFunction;
         remoteFunction.OnClientInvoke = functionBinding as (...args: unknown[]) => unknown;
+    }
+
+    public bindRemoteEvent<A extends unknown[]>(
+        eventDefinition: EventDefinition<A>,
+        functionBinding: (...args: A) => void
+    ): RBXScriptConnection {
+        const remoteEvent = this.fetchEventWithDefinition(eventDefinition) as RemoteEvent;
+        return remoteEvent.OnClientEvent.Connect(functionBinding as (...args: unknown[]) => void);
+    }
+
+    public getRemoteEventFunction<A extends unknown[]>(eventDefinition: EventDefinition<A>): (...args: A) => void {
+        const remoteEvent = this.fetchEventWithDefinition(eventDefinition) as RemoteEvent;
+        return ((...args: A) => remoteEvent.FireServer(...args)) as (...args: A) => void;
     }
 }
 

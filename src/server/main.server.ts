@@ -2,6 +2,7 @@ import { TestClientFunction } from 'shared/client-side-remote-functions';
 import {
     EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, ServerFramework as Framework, Service
 } from 'shared/framework';
+import { TestRemoteEvent } from 'shared/remote-events';
 
 import t from '@rbxts/t';
 
@@ -77,6 +78,11 @@ const ServerBindableEvent = new EventDefinition<[number]>('SeverBindableEvent');
 Framework.registerBindableEvent(ServerBindableEvent);
 Framework.bindBindableEvent(ServerBindableEvent, (num) => print(num));
 
+Framework.registerRemoteEvent(TestRemoteEvent);
+Framework.bindRemoteEvent(TestRemoteEvent, (player: Player, str: string, bool: boolean, num: number) => {
+    print(player.Name, str, bool, num);
+});
+
 Framework.start();
 
 Framework.getService(TestLifeService).live();
@@ -98,5 +104,8 @@ print(`2x4=${Framework.getBindableFunction(ServerBindableFunction)(2, 4)}`);
 const fireServerBindableEvent = Framework.getBindableEventFunction(ServerBindableEvent);
 fireServerBindableEvent(1);
 fireServerBindableEvent(6);
+
+const fireRemoteEvent = Framework.getRemoteEventAllFunction(TestRemoteEvent);
+fireRemoteEvent('from server', true, 42);
 
 export default {};

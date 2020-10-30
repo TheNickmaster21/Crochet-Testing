@@ -1,5 +1,6 @@
 import { TestClientFunction } from 'shared/client-side-remote-functions';
 import { ClientFramework as Framework, Controller, FunctionDefinition } from 'shared/framework';
+import { TestRemoteEvent } from 'shared/remote-events';
 import { StringCheckFunction, TestFunction } from 'shared/server-side-remote-functions';
 
 Framework.started().await();
@@ -28,6 +29,13 @@ Framework.registerBindableFunction(ClientBindableFunction);
 Framework.bindBindableFunction(ClientBindableFunction, (a: number, b: number) => a * b);
 
 print(`3x6=${Framework.getBindableFunction(ClientBindableFunction)(3, 6)}`);
+
+Framework.bindRemoteEvent(TestRemoteEvent, (str, bool, num) => {
+    print(str, bool, num);
+});
+
+const fireRemoteEvent = Framework.getRemoteEventFunction(TestRemoteEvent);
+fireRemoteEvent('from client', false, 42);
 
 class TestController extends Controller {
     public test(): void {
