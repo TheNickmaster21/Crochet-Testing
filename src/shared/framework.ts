@@ -18,9 +18,10 @@ export class FunctionDefinition<A extends unknown[], R> {
     private static functionDefinitionNames = new Set<string>();
 
     constructor(public functionIdentifier: string) {
-        if (FunctionDefinition.functionDefinitionNames.has(functionIdentifier)) {
-            throw `There is already a function defined with the identifier: ${functionIdentifier}`;
-        }
+        assert(
+            !FunctionDefinition.functionDefinitionNames.has(functionIdentifier),
+            `There is already a function defined with the identifier: ${functionIdentifier}`
+        );
         FunctionDefinition.functionDefinitionNames.add(functionIdentifier);
     }
 }
@@ -30,12 +31,14 @@ const FRAMEWORK_FOLDER_NAME = 'Framework';
 export abstract class CoreFramework {
     protected frameworkFolder?: Folder;
     protected functionFolder?: Folder;
+    protected eventFolder?: Folder;
 
     public registerBindableFunction<A extends unknown[], R>(functionDefinition: FunctionDefinition<A, R>): void {
         const name = functionDefinition.functionIdentifier;
-        const remoteFunction = new Instance('BindableFunction');
-        remoteFunction.Name = name;
-        remoteFunction.Parent = this.functionFolder;
+        assert(this.functionFolder?.FindFirstChild(name) === undefined, `Duplicate function for name ${name}!`);
+        const bindableFunction = new Instance('BindableFunction');
+        bindableFunction.Name = name;
+        bindableFunction.Parent = this.functionFolder;
     }
 
     public bindBindableFunction<A extends unknown[], R>(
@@ -57,8 +60,8 @@ export abstract class CoreFramework {
         functionDefinition: FunctionDefinition<unknown[], unknown>
     ): RemoteFunction | BindableFunction {
         const name = functionDefinition.functionIdentifier;
-        const func = this.functionFolder!.FindFirstChild(name);
-        if (func === undefined) throw `Could not find function with identifier ${name}!`;
+        const func = this.functionFolder?.FindFirstChild(name);
+        assert(func !== undefined, `Could not find function with identifier ${name}!`);
         return func as RemoteFunction | BindableFunction;
     }
 }
@@ -73,6 +76,8 @@ class ServerFrameworkImpl extends CoreFramework {
         this.frameworkFolder.Name = FRAMEWORK_FOLDER_NAME;
         this.functionFolder = new Instance('Folder', this.frameworkFolder);
         this.functionFolder.Name = 'Functions';
+        this.eventFolder = new Instance('Folder', this.frameworkFolder);
+        this.eventFolder.Name = 'Events';
     }
 
     public setup(): void {
@@ -87,13 +92,13 @@ class ServerFrameworkImpl extends CoreFramework {
 
     public registerService(serviceConstructor: ServiceConstructor): void {
         const serviceKey = tostring(serviceConstructor);
-        if (this.services.has(serviceKey)) throw `Duplicate service for name ${serviceKey}!`;
+        assert(!this.services.has(serviceKey), `Duplicate service for name ${serviceKey}!`);
         this.services.set(tostring(serviceConstructor), new serviceConstructor());
     }
 
     public getService<S extends ServiceConstructor>(serviceConstructor: S): InstanceType<S> {
         const serviceKey = tostring(serviceConstructor);
-        if (!this.services.has(serviceKey)) throw `No service registered for name ${serviceKey}!`;
+        assert(this.services.has(serviceKey), `No service registered for name ${serviceKey}!`);
         return this.services.get(serviceKey) as InstanceType<S>;
     }
 
@@ -155,6 +160,7 @@ class ClientFrameworkImpl extends CoreFramework {
 
         this.frameworkFolder = script.Parent?.WaitForChild(FRAMEWORK_FOLDER_NAME) as Folder;
         this.functionFolder = this.frameworkFolder.WaitForChild('Functions') as Folder;
+        this.eventFolder = this.frameworkFolder.WaitForChild('Events') as Folder;
     }
 
     public async started(): Promise<void> {
@@ -172,13 +178,13 @@ class ClientFrameworkImpl extends CoreFramework {
 
     public registerController(controllerConstructor: ControllerConstructor): void {
         const controllerKey = tostring(controllerConstructor);
-        if (this.controllers.has(controllerKey)) throw `Duplicate controller for name ${controllerKey}!`;
+        assert(!this.controllers.has(controllerKey), `Duplicate controller for name ${controllerKey}!`);
         this.controllers.set(tostring(controllerConstructor), new controllerConstructor());
     }
 
     public getController<S extends ControllerConstructor>(controllerConstructor: S): InstanceType<S> {
         const controllerKey = tostring(controllerConstructor);
-        if (!this.controllers.has(controllerKey)) throw `No controller registered for name ${controllerKey}!`;
+        assert(this.controllers.has(controllerKey), `No controller registered for name ${controllerKey}!`);
         return this.controllers.get(controllerKey) as InstanceType<S>;
     }
 
