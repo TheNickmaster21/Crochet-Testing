@@ -1,6 +1,6 @@
 import { TestClientFunction } from 'shared/client-side-remote-functions';
 import {
-    FunctionDefinition, OnHeartbeat, OnInit, ServerFramework as Framework, Service
+    EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, ServerFramework as Framework, Service
 } from 'shared/framework';
 
 import t from '@rbxts/t';
@@ -73,6 +73,10 @@ const ServerBindableFunction = new FunctionDefinition<[number, number], number>(
 Framework.registerBindableFunction(ServerBindableFunction);
 Framework.bindBindableFunction(ServerBindableFunction, (a: number, b: number) => a * b);
 
+const ServerBindableEvent = new EventDefinition<[number]>('SeverBindableEvent');
+Framework.registerBindableEvent(ServerBindableEvent);
+Framework.bindBindableEvent(ServerBindableEvent, (num) => print(num));
+
 Framework.start();
 
 Framework.getService(TestLifeService).live();
@@ -90,5 +94,9 @@ new Promise<void>((resolve) => {
 });
 
 print(`2x4=${Framework.getBindableFunction(ServerBindableFunction)(2, 4)}`);
+
+const fireServerBindableEvent = Framework.getBindableEventFunction(ServerBindableEvent);
+fireServerBindableEvent(1);
+fireServerBindableEvent(6);
 
 export default {};
