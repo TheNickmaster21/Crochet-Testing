@@ -1,8 +1,7 @@
 import { TestClientFunction } from 'shared/client-side-remote-functions';
-import {
-    EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, ServerFramework as Framework, Service
-} from 'shared/framework';
+import { EventDefinition, FunctionDefinition, OnHeartbeat, OnInit } from 'shared/framework';
 import { TestRemoteEvent } from 'shared/remote-events';
+import { ServerFramework as Framework, Service } from 'shared/server-framework';
 
 import t from '@rbxts/t';
 

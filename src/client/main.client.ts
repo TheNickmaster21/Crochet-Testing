@@ -1,5 +1,6 @@
+import { ClientFramework as Framework, Controller } from 'shared/client-framework';
 import { TestClientFunction } from 'shared/client-side-remote-functions';
-import { ClientFramework as Framework, Controller, FunctionDefinition } from 'shared/framework';
+import { FunctionDefinition } from 'shared/framework';
 import { TestRemoteEvent } from 'shared/remote-events';
 import { StringCheckFunction, TestFunction } from 'shared/server-side-remote-functions';
 

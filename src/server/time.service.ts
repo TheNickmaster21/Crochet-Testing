@@ -1,4 +1,4 @@
-import { Service } from 'shared/framework';
+import { Service } from 'shared/server-framework';
 
 export class TimeService extends Service {
     public getTime(): number {
