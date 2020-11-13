@@ -1,11 +1,35 @@
+/** Services and controllers implementing this interface will have their onInit() method
+ *  called after start() is called on the server framework but before all other services
+ *  and controllers may be initialized.
+ */
 export interface OnInit {
     onInit(): void;
 }
 
+/** Services and controllers implementing this interface will have their onStart() method
+ *  called after start() is called on the server framework and after onInit() has been
+ *  called on all other services and controllers.
+ */
+export interface OnStart {
+    onStart(): void;
+}
+
+/** Services and Controllers implementing this interface will have their onHeartbeat()
+ * method called every Heartbeat of RunService after start() is called on the server
+ * framework.
+ */
 export interface OnHeartbeat {
     onHeartbeat(step: number): void;
 }
 
+/** Function definitions are used to define functions that are bound to remote
+ * functions and bindable functions. Function Definitions are used by the
+ * framework to indentify functions in a type safe way.
+ *
+ * ex. A functions that takes a string as the first argument, a number as the
+ *     second argument, and returns a boolean
+ * new FunctionDefinition<[string, number], boolean>('TestFunction')
+ */
 export class FunctionDefinition<A extends unknown[], R> {
     private static functionDefinitionNames = new Set<string>();
 
@@ -18,6 +42,13 @@ export class FunctionDefinition<A extends unknown[], R> {
     }
 }
 
+/** Event definitions are used to define events that are bound to remote
+ * events and bindable events. Event Definitions are used by the
+ * framework to indentify events in a type safe way.
+ *
+ * ex. An event that returns two numbers
+ * new EventDefinition<[number, number]>('TestEvent')
+ */
 export class EventDefinition<A extends unknown[]> {
     private static eventDefinitionNames = new Set<string>();
 

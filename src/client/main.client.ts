@@ -4,9 +4,19 @@ import { FunctionDefinition } from 'shared/framework';
 import { TestRemoteEvent } from 'shared/remote-events';
 import { StringCheckFunction, TestFunction } from 'shared/server-side-remote-functions';
 
-Framework.started().await();
+class TestController extends Controller {
+    public test(): void {
+        print('I have been tested');
+    }
+}
+
+Framework.registerController(TestController);
+
+Framework.start().await();
 
 print('Client Framework Initialized');
+
+Framework.getController(TestController).test();
 
 let counter = 0;
 Framework.bindClientSideRemoteFunction(TestClientFunction, (test: string) => {
@@ -37,15 +47,5 @@ Framework.bindRemoteEvent(TestRemoteEvent, (str, bool, num) => {
 
 const fireRemoteEvent = Framework.getRemoteEventFunction(TestRemoteEvent);
 fireRemoteEvent('from client', false, 42);
-
-class TestController extends Controller {
-    public test(): void {
-        print('I have been tested');
-    }
-}
-
-Framework.registerController(TestController);
-
-Framework.getController(TestController).test();
 
 export default {};

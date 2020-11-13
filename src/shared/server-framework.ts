@@ -1,5 +1,6 @@
 import {
-    CoreFramework, EventDefinition, FRAMEWORK_FOLDER_NAME, FunctionDefinition, OnHeartbeat, OnInit
+    CoreFramework, EventDefinition, FRAMEWORK_FOLDER_NAME, FunctionDefinition, OnHeartbeat, OnInit,
+    OnStart
 } from './framework';
 
 const RunService = game.GetService('RunService');
@@ -12,6 +13,8 @@ type ServiceConstructor = new () => Service;
 class ServerFrameworkImplementation extends CoreFramework {
     private services = new Map<string, Service>();
 
+    private starting: boolean = false;
+
     public constructor() {
         super();
 
@@ -23,17 +26,13 @@ class ServerFrameworkImplementation extends CoreFramework {
         this.eventFolder.Name = 'Events';
     }
 
-    public setup(): void {
-        const setup = new Instance('BoolValue');
-        setup.Name = 'Setup';
-        setup.Parent = script.Parent;
-    }
-
     public registerServices(serviceConstructors: ServiceConstructor[]): void {
         serviceConstructors.forEach((serviceConstructor) => this.registerService(serviceConstructor));
     }
 
     public registerService(serviceConstructor: ServiceConstructor): void {
+        assert(!this.starting, 'Services cannot be registered after start() has already been called!');
+
         const serviceKey = tostring(serviceConstructor);
         assert(!this.services.has(serviceKey), `Duplicate service for name ${serviceKey}!`);
         this.services.set(tostring(serviceConstructor), new serviceConstructor());
@@ -112,16 +111,29 @@ class ServerFrameworkImplementation extends CoreFramework {
     }
 
     public start(): void {
+        assert(!this.starting, 'start() has already been called!');
+        this.starting = true;
+
         this.services.values().forEach((service) => {
             if ('onInit' in service) {
                 (service as OnInit).onInit();
+            }
+        });
+
+        this.frameworkFolder!.Parent = script.Parent;
+
+        this.services.values().forEach((service) => {
+            if ('onStart' in service) {
+                (service as OnStart).onStart();
             }
             if ('onHeartbeat' in service) {
                 game.GetService('RunService').Heartbeat.Connect((step) => (service as OnHeartbeat).onHeartbeat(step));
             }
         });
 
-        this.frameworkFolder!.Parent = script.Parent;
+        const setup = new Instance('BoolValue');
+        setup.Name = 'Started';
+        setup.Parent = script.Parent;
     }
 }
 

@@ -1,5 +1,6 @@
 import {
-    CoreFramework, EventDefinition, FRAMEWORK_FOLDER_NAME, FunctionDefinition
+    CoreFramework, EventDefinition, FRAMEWORK_FOLDER_NAME, FunctionDefinition, OnHeartbeat, OnInit,
+    OnStart
 } from './framework';
 
 const RunService = game.GetService('RunService');
@@ -12,6 +13,8 @@ type ControllerConstructor = new () => Controller;
 class ClientFrameworkImplementation extends CoreFramework {
     private controllers = new Map<string, Controller>();
 
+    private startPromise?: Promise<void>;
+
     public constructor() {
         super();
 
@@ -20,13 +23,38 @@ class ClientFrameworkImplementation extends CoreFramework {
         this.eventFolder = this.frameworkFolder.WaitForChild('Events') as Folder;
     }
 
-    public async started(): Promise<void> {
-        return new Promise<void>((resolve) =>
-            Promise.spawn(() => {
-                script.Parent?.WaitForChild('Setup');
-                resolve();
-            })
-        );
+    /** Start should be called once by the client to setup all controllers. Unlike on the server,
+     *  the start() method on the ClientFramework returns a promise that waits on the server to
+     *  start. All OnInit() methods are called as soon as start() is called but all onStart()
+     *  methods are called after all other onInit methods are called AND after the server starts.
+     */
+    public async start(): Promise<void> {
+        if (this.startPromise === undefined) {
+            this.startPromise = new Promise<void>((resolve) => {
+                this.controllers.values().forEach((controller) => {
+                    if ('onInit' in controller) {
+                        (controller as OnInit).onInit();
+                    }
+                });
+
+                Promise.spawn(() => {
+                    script.Parent?.WaitForChild('Started');
+                    this.controllers.values().forEach((controller) => {
+                        if ('onStart' in controller) {
+                            (controller as OnStart).onStart();
+                        }
+                        if ('onHeartbeat' in controller) {
+                            game.GetService('RunService').Heartbeat.Connect((step) =>
+                                (controller as OnHeartbeat).onHeartbeat(step)
+                            );
+                        }
+                    });
+
+                    resolve();
+                });
+            });
+        }
+        return this.startPromise;
     }
 
     public registerControllers(controllerConstructors: ControllerConstructor[]): void {
@@ -34,6 +62,11 @@ class ClientFrameworkImplementation extends CoreFramework {
     }
 
     public registerController(controllerConstructor: ControllerConstructor): void {
+        assert(
+            this.startPromise === undefined,
+            'Controllers cannot be registered after start() has already been called!'
+        );
+
         const controllerKey = tostring(controllerConstructor);
         assert(!this.controllers.has(controllerKey), `Duplicate controller for name ${controllerKey}!`);
         this.controllers.set(tostring(controllerConstructor), new controllerConstructor());

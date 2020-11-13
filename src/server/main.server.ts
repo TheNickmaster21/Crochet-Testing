@@ -43,8 +43,6 @@ class TestHeartbeatService extends Service implements OnHeartbeat {
     }
 }
 
-Framework.setup();
-
 Framework.registerServices([
     TestHelloService,
     TestGoodbyeService,
