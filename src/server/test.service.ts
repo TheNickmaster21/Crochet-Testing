@@ -1,3 +1,3 @@
-import { Service } from 'shared/server-framework';
+import { Service } from '@rbxts/crochet';
 
 export class TestService extends Service {}

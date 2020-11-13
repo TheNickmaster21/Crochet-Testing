@@ -1,8 +1,9 @@
 import { TestClientFunction } from 'shared/client-side-remote-functions';
-import { EventDefinition, FunctionDefinition, OnHeartbeat, OnInit } from 'shared/framework';
 import { TestRemoteEvent } from 'shared/remote-events';
-import { ServerFramework as Framework, Service } from 'shared/server-framework';
 
+import {
+    CrochetServer as Crochet, EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, Service
+} from '@rbxts/crochet';
 import t from '@rbxts/t';
 
 import { StringCheckFunction, TestFunction } from '../shared/server-side-remote-functions';
@@ -27,8 +28,8 @@ class TestLifeService extends Service implements OnInit {
     public testGoodbyeService?: TestGoodbyeService = undefined;
 
     public onInit(): void {
-        this.testHelloService = Framework.getService(TestHelloService);
-        this.testGoodbyeService = Framework.getService(TestGoodbyeService);
+        this.testHelloService = Crochet.getService(TestHelloService);
+        this.testGoodbyeService = Crochet.getService(TestGoodbyeService);
     }
 
     live(): void {
@@ -43,7 +44,7 @@ class TestHeartbeatService extends Service implements OnHeartbeat {
     }
 }
 
-Framework.registerServices([
+Crochet.registerServices([
     TestHelloService,
     TestGoodbyeService,
     TestLifeService,
@@ -53,39 +54,39 @@ Framework.registerServices([
     TestService
 ]);
 
-Framework.registerRemoteFunction(TestFunction);
+Crochet.registerRemoteFunction(TestFunction);
 let counter = 0;
-Framework.bindServerSideRemoteFunction(TestFunction, (player: Player, test: string) => {
+Crochet.bindServerSideRemoteFunction(TestFunction, (player: Player, test: string) => {
     print(`${player.Name} said ${test} (${++counter})`);
     return 'reply from TestFunctionWrapper';
 });
 
-Framework.registerRemoteFunction(StringCheckFunction);
-Framework.bindServerSideRemoteFunction(StringCheckFunction, (player: Player, test: string) => {
+Crochet.registerRemoteFunction(StringCheckFunction);
+Crochet.bindServerSideRemoteFunction(StringCheckFunction, (player: Player, test: string) => {
     return t.string(test);
 });
 
-Framework.registerRemoteFunction(TestClientFunction);
+Crochet.registerRemoteFunction(TestClientFunction);
 
 const ServerBindableFunction = new FunctionDefinition<[number, number], number>('ServerBindableFunction');
-Framework.registerBindableFunction(ServerBindableFunction);
-Framework.bindBindableFunction(ServerBindableFunction, (a: number, b: number) => a * b);
+Crochet.registerBindableFunction(ServerBindableFunction);
+Crochet.bindBindableFunction(ServerBindableFunction, (a: number, b: number) => a * b);
 
 const ServerBindableEvent = new EventDefinition<[number]>('SeverBindableEvent');
-Framework.registerBindableEvent(ServerBindableEvent);
-Framework.bindBindableEvent(ServerBindableEvent, (num) => print(num));
+Crochet.registerBindableEvent(ServerBindableEvent);
+Crochet.bindBindableEvent(ServerBindableEvent, (num) => print(num));
 
-Framework.registerRemoteEvent(TestRemoteEvent);
-Framework.bindRemoteEvent(TestRemoteEvent, (player: Player, str: string, bool: boolean, num: number) => {
+Crochet.registerRemoteEvent(TestRemoteEvent);
+Crochet.bindRemoteEvent(TestRemoteEvent, (player: Player, str: string, bool: boolean, num: number) => {
     print(player.Name, str, bool, num);
 });
 
-Framework.start();
+Crochet.start();
 
-Framework.getService(TestLifeService).live();
+Crochet.getService(TestLifeService).live();
 
 new Promise<void>((resolve) => {
-    const clientSideFunction = Framework.getClientSideRemoteFunction(TestClientFunction);
+    const clientSideFunction = Crochet.getClientSideRemoteFunction(TestClientFunction);
 
     print(
         `Client responded by saying: ${clientSideFunction(
@@ -96,13 +97,13 @@ new Promise<void>((resolve) => {
     resolve();
 });
 
-print(`2x4=${Framework.getBindableFunction(ServerBindableFunction)(2, 4)}`);
+print(`2x4=${Crochet.getBindableFunction(ServerBindableFunction)(2, 4)}`);
 
-const fireServerBindableEvent = Framework.getBindableEventFunction(ServerBindableEvent);
+const fireServerBindableEvent = Crochet.getBindableEventFunction(ServerBindableEvent);
 fireServerBindableEvent(1);
 fireServerBindableEvent(6);
 
-const fireRemoteEvent = Framework.getRemoteEventAllFunction(TestRemoteEvent);
+const fireRemoteEvent = Crochet.getRemoteEventAllFunction(TestRemoteEvent);
 fireRemoteEvent('from server', true, 42);
 
 export default {};

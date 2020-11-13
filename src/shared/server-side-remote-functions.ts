@@ -1,4 +1,4 @@
-import { FunctionDefinition } from 'shared/framework';
+import { FunctionDefinition } from '@rbxts/crochet';
 
 export const TestFunction = new FunctionDefinition<[string], string>('TestFunction');
 
