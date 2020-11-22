@@ -1,12 +1,11 @@
-import { TestClientFunction } from 'shared/client-side-remote-functions';
 import { TestRemoteEvent } from 'shared/remote-events';
+import { StringCheckFunction, TestClientFunction, TestFunction } from 'shared/remotes';
 
 import {
     CrochetServer as Crochet, EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, Service
 } from '@rbxts/crochet';
 import t from '@rbxts/t';
 
-import { StringCheckFunction, TestFunction } from '../shared/server-side-remote-functions';
 import { ColorService } from './color.service';
 import { TestService } from './test.service';
 import { TimeService } from './time.service';
@@ -68,7 +67,7 @@ Crochet.bindServerSideRemoteFunction(StringCheckFunction, (player: Player, test:
 
 Crochet.registerRemoteFunction(TestClientFunction);
 
-const ServerBindableFunction = new FunctionDefinition<[number, number], number>('ServerBindableFunction');
+const ServerBindableFunction = new FunctionDefinition<(n1: number, n2: number) => number>('ServerBindableFunction');
 Crochet.registerBindableFunction(ServerBindableFunction);
 Crochet.bindBindableFunction(ServerBindableFunction, (a: number, b: number) => a * b);
 

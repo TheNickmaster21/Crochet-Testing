@@ -1,6 +1,5 @@
-import { TestClientFunction } from 'shared/client-side-remote-functions';
 import { TestRemoteEvent } from 'shared/remote-events';
-import { StringCheckFunction, TestFunction } from 'shared/server-side-remote-functions';
+import { StringCheckFunction, TestClientFunction, TestFunction } from 'shared/remotes';
 
 import { Controller, CrochetClient as Crochet, FunctionDefinition } from '@rbxts/crochet';
 
@@ -35,7 +34,7 @@ print('point 1');
 stringCheckPromiseFunction('abc').then(() => print('point 2'));
 print('point 3 (but comes before 2)');
 
-const ClientBindableFunction = new FunctionDefinition<[number, number], number>('ClientBindableFunction');
+const ClientBindableFunction = new FunctionDefinition<(n1: number, n2: number) => number>('ClientBindableFunction');
 Crochet.registerBindableFunction(ClientBindableFunction);
 Crochet.bindBindableFunction(ClientBindableFunction, (a: number, b: number) => a * b);
 
