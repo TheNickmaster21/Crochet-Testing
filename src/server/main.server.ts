@@ -1,5 +1,6 @@
-import { TestRemoteEvent } from 'shared/remote-events';
-import { StringCheckFunction, TestClientFunction, TestFunction } from 'shared/remotes';
+import {
+    StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent
+} from 'shared/remotes';
 
 import {
     CrochetServer as Crochet, EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, Service
@@ -67,11 +68,16 @@ Crochet.bindServerSideRemoteFunction(StringCheckFunction, (player: Player, test:
 
 Crochet.registerRemoteFunction(TestClientFunction);
 
-const ServerBindableFunction = new FunctionDefinition<(n1: number, n2: number) => number>('ServerBindableFunction');
+const ServerBindableFunction = new FunctionDefinition<(n1: number, n2: number) => number>(
+    'ServerBindableFunction',
+    [t.number, t.number],
+    t.number
+);
 Crochet.registerBindableFunction(ServerBindableFunction);
 Crochet.bindBindableFunction(ServerBindableFunction, (a: number, b: number) => a * b);
+print(`2x4=${Crochet.getBindableFunction(ServerBindableFunction)((2 as unknown) as number, 4)}`);
 
-const ServerBindableEvent = new EventDefinition<[number]>('SeverBindableEvent');
+const ServerBindableEvent = new EventDefinition<[number]>('SeverBindableEvent', [t.numberConstrained(-10, 10)]);
 Crochet.registerBindableEvent(ServerBindableEvent);
 Crochet.bindBindableEvent(ServerBindableEvent, (num) => print(num));
 
@@ -95,8 +101,6 @@ new Promise<void>((resolve) => {
     );
     resolve();
 });
-
-print(`2x4=${Crochet.getBindableFunction(ServerBindableFunction)(2, 4)}`);
 
 const fireServerBindableEvent = Crochet.getBindableEventFunction(ServerBindableEvent);
 fireServerBindableEvent(1);

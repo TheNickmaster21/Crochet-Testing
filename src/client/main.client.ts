@@ -1,5 +1,6 @@
-import { TestRemoteEvent } from 'shared/remote-events';
-import { StringCheckFunction, TestClientFunction, TestFunction } from 'shared/remotes';
+import {
+    StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent
+} from 'shared/remotes';
 
 import { Controller, CrochetClient as Crochet, FunctionDefinition } from '@rbxts/crochet';
 
