@@ -1,15 +1,17 @@
 import {
-    StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent
-} from 'shared/remotes';
-
-import {
-    CrochetServer as Crochet, EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, Service
+    CrochetServer as Crochet,
+    EventDefinition,
+    FunctionDefinition,
+    OnHeartbeat,
+    OnInit,
+    Service
 } from '@rbxts/crochet';
-import t from '@rbxts/t';
+import { StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent } from 'shared/remotes';
 
 import { ColorService } from './color.service';
 import { TestService } from './test.service';
 import { TimeService } from './time.service';
+import t from '@rbxts/t';
 
 class TestHelloService extends Service {
     sayHello(): void {
