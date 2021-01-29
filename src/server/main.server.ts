@@ -9,6 +9,7 @@ import {
 import { StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent } from 'shared/remotes';
 
 import { ColorService } from './color.service';
+import { SecondName } from 'shared/attributes';
 import { TestService } from './test.service';
 import { TimeService } from './time.service';
 import t from '@rbxts/t';
@@ -110,5 +111,13 @@ fireServerBindableEvent(6);
 
 const fireRemoteEvent = Crochet.getRemoteEventAllFunction(TestRemoteEvent);
 fireRemoteEvent('from server', true, 42);
+
+// These methods rely on the beta attributes feature.
+// Make sure the feature is enabled for studio before uncommenting!
+// const testAttributePart = new Instance('Part');
+// Crochet.setAttribute(testAttributePart, SecondName, 'TestPartPleaseIngore');
+// print(Crochet.getAttribute(testAttributePart, SecondName));
+// Crochet.setAttribute(testAttributePart, SecondName, undefined);
+// print(Crochet.getAttribute(testAttributePart, SecondName));
 
 export default {};
