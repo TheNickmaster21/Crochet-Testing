@@ -1,6 +1,6 @@
 import { EventDefinition, FunctionDefinition } from '@rbxts/crochet';
 
-import t from '@rbxts/t';
+import { t } from '@rbxts/t';
 
 export const TestClientFunction = new FunctionDefinition<(param: string) => string>(
     'TestClientFunction',

@@ -11,7 +11,7 @@ import { StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent 
 import { ColorService } from './color.service';
 import { TestService } from './test.service';
 import { TimeService } from './time.service';
-import t from '@rbxts/t';
+import { t } from '@rbxts/t';
 
 class TestHelloService extends Service {
     sayHello(): void {
