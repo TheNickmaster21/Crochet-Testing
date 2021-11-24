@@ -1,16 +1,12 @@
-import {
-    CrochetServer as Crochet,
-    EventDefinition,
-    FunctionDefinition,
-    OnHeartbeat,
-    OnInit,
-    Service
-} from '@rbxts/crochet';
+import { CrochetServer, EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, Service } from '@rbxts/crochet';
+import { PromptActionText, PromptObjectText } from 'shared/attributes';
+import { PromptComponent, PromptTag } from './components/prompt.component';
+import { SpinComponent, SpinTag } from './components/spin.component';
 import { StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent } from 'shared/remotes';
 
-import { ColorService } from './color.service';
-import { TestService } from './test.service';
-import { TimeService } from './time.service';
+import { ColorService } from './services/color.service';
+import { TestService } from './services/test.service';
+import { TimeService } from './services/time.service';
 import { t } from '@rbxts/t';
 
 class TestHelloService extends Service {
@@ -30,8 +26,8 @@ class TestLifeService extends Service implements OnInit {
     public testGoodbyeService?: TestGoodbyeService = undefined;
 
     public onInit(): void {
-        this.testHelloService = Crochet.getService(TestHelloService);
-        this.testGoodbyeService = Crochet.getService(TestGoodbyeService);
+        this.testHelloService = CrochetServer.getService(TestHelloService);
+        this.testGoodbyeService = CrochetServer.getService(TestGoodbyeService);
     }
 
     live(): void {
@@ -46,7 +42,7 @@ class TestHeartbeatService extends Service implements OnHeartbeat {
     }
 }
 
-Crochet.registerServices([
+CrochetServer.registerServices([
     TestHelloService,
     TestGoodbyeService,
     TestLifeService,
@@ -56,44 +52,48 @@ Crochet.registerServices([
     TestService
 ]);
 
-Crochet.registerRemoteFunction(TestFunction);
+CrochetServer.registerComponentForTag(SpinComponent, SpinTag);
+CrochetServer.registerComponents([[PromptComponent, PromptTag]]);
+
+CrochetServer.registerRemoteFunction(TestFunction);
 let counter = 0;
-Crochet.bindServerSideRemoteFunction(TestFunction, (player: Player, test: string) => {
+CrochetServer.bindServerSideRemoteFunction(TestFunction, (player: Player, test: string) => {
     print(`${player.Name} said ${test} (${++counter})`);
     return 'reply from TestFunctionWrapper';
 });
 
-Crochet.registerRemoteFunction(StringCheckFunction);
-Crochet.bindServerSideRemoteFunction(StringCheckFunction, (player: Player, test: string) => {
+CrochetServer.registerRemoteFunction(StringCheckFunction);
+CrochetServer.bindServerSideRemoteFunction(StringCheckFunction, (player: Player, test: string) => {
     return t.string(test);
 });
 
-Crochet.registerRemoteFunction(TestClientFunction);
+CrochetServer.registerRemoteFunction(TestClientFunction);
 
 const ServerBindableFunction = new FunctionDefinition<(n1: number, n2: number) => number>(
     'ServerBindableFunction',
     [t.number, t.number],
     t.number
 );
-Crochet.registerBindableFunction(ServerBindableFunction);
-Crochet.bindBindableFunction(ServerBindableFunction, (a: number, b: number) => a * b);
-print(`2x4=${Crochet.getBindableFunction(ServerBindableFunction)((2 as unknown) as number, 4)}`);
+CrochetServer.registerBindableFunction(ServerBindableFunction);
+CrochetServer.bindBindableFunction(ServerBindableFunction, (a: number, b: number) => a * b);
+print(`2x4=${CrochetServer.getBindableFunction(ServerBindableFunction)(2 as unknown as number, 4)}`);
 
 const ServerBindableEvent = new EventDefinition<[number]>('SeverBindableEvent', [t.numberConstrained(-10, 10)]);
-Crochet.registerBindableEvent(ServerBindableEvent);
-Crochet.bindBindableEvent(ServerBindableEvent, (num) => print(num));
+CrochetServer.registerBindableEvent(ServerBindableEvent);
+CrochetServer.bindBindableEvent(ServerBindableEvent, (num) => print(num));
 
-Crochet.registerRemoteEvent(TestRemoteEvent);
-Crochet.bindRemoteEvent(TestRemoteEvent, (player: Player, str: string, bool: boolean, num: number) => {
+CrochetServer.registerRemoteEvent(TestRemoteEvent);
+CrochetServer.bindRemoteEvent(TestRemoteEvent, (player: Player, str: string, bool: boolean, num: number) => {
     print(player.Name, str, bool, num);
 });
 
-Crochet.start();
+CrochetServer.start();
 
-Crochet.getService(TestLifeService).live();
+CrochetServer.getService(TestLifeService).live();
 
 new Promise<void>((resolve) => {
-    const clientSideFunction = Crochet.getClientSideRemoteFunction(TestClientFunction);
+    // This is deprecated but let's test it anyways
+    const clientSideFunction = CrochetServer.getClientSideRemoteFunction(TestClientFunction);
 
     print(
         `Client responded by saying: ${clientSideFunction(
@@ -104,12 +104,33 @@ new Promise<void>((resolve) => {
     resolve();
 });
 
-const fireServerBindableEvent = Crochet.getBindableEventFunction(ServerBindableEvent);
+const fireServerBindableEvent = CrochetServer.getBindableEventFunction(ServerBindableEvent);
 fireServerBindableEvent(1);
 fireServerBindableEvent(6);
 
-const fireRemoteEvent = Crochet.getRemoteEventAllFunction(TestRemoteEvent);
+const fireRemoteEvent = CrochetServer.getRemoteEventAllFunction(TestRemoteEvent);
 fireRemoteEvent('from server', true, 42);
+
+const CollectionService = game.GetService('CollectionService');
+
+const spinPart = new Instance('Part');
+spinPart.Position = new Vector3(10, 20, 10);
+spinPart.Parent = game.Workspace;
+CollectionService.AddTag(spinPart, SpinTag);
+task.spawn(() => {
+    wait(10);
+    CollectionService.RemoveTag(spinPart, SpinTag);
+    print('Removed spin tag');
+});
+
+const promptPart = new Instance('Part');
+spinPart.Position = new Vector3(-10, 20, 10);
+promptPart.Size = new Vector3(4, 4, 4);
+promptPart.BrickColor = BrickColor.Green();
+promptPart.Parent = game.Workspace;
+CrochetServer.setAttribute(promptPart, PromptObjectText, 'Prompt Part');
+CrochetServer.setAttribute(promptPart, PromptActionText, 'Interact with');
+CollectionService.AddTag(promptPart, PromptTag);
 
 // These methods rely on the beta attributes feature.
 // Make sure the feature is enabled for studio before uncommenting!

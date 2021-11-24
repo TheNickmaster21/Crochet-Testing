@@ -1,4 +1,4 @@
-import { Controller, CrochetClient as Crochet, FunctionDefinition } from '@rbxts/crochet';
+import { Controller, CrochetClient, FunctionDefinition } from '@rbxts/crochet';
 import { StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent } from 'shared/remotes';
 
 class TestController implements Controller {
@@ -7,42 +7,43 @@ class TestController implements Controller {
     }
 }
 
-Crochet.registerController(TestController);
+CrochetClient.registerController(TestController);
 
-Crochet.start().await();
+CrochetClient.start().await();
 
 print('Client Framework Initialized');
 
-Crochet.getController(TestController).test();
+CrochetClient.getController(TestController).test();
 
 let counter = 0;
-Crochet.bindClientSideRemoteFunction(TestClientFunction, (test: string) => {
+// This is deprecated but let's test it anyways
+CrochetClient.bindClientSideRemoteFunction(TestClientFunction, (test: string) => {
     print(`server said ${test} (${++counter})`);
     return 'reply from TestClientFunctionWrapper';
 });
 
-const testFunction = Crochet.getServerSideRemoteFunction(TestFunction);
+const testFunction = CrochetClient.getServerSideRemoteFunction(TestFunction);
 print(`Server replied ${testFunction('test 2 from client')}`);
-const stringCheckFunction = Crochet.getServerSideRemoteFunction(StringCheckFunction);
+const stringCheckFunction = CrochetClient.getServerSideRemoteFunction(StringCheckFunction);
 print(stringCheckFunction('abcd'));
 
-const stringCheckPromiseFunction = Crochet.getServerSideRemotePromiseFunction(StringCheckFunction);
+const stringCheckPromiseFunction = CrochetClient.getServerSideRemotePromiseFunction(StringCheckFunction);
 
 print('point 1');
 stringCheckPromiseFunction('abc').then(() => print('point 2'));
 print('point 3 (but comes before 2)');
 
 const ClientBindableFunction = new FunctionDefinition<(n1: number, n2: number) => number>('ClientBindableFunction');
-Crochet.registerBindableFunction(ClientBindableFunction);
-Crochet.bindBindableFunction(ClientBindableFunction, (a: number, b: number) => a * b);
+CrochetClient.registerBindableFunction(ClientBindableFunction);
+CrochetClient.bindBindableFunction(ClientBindableFunction, (a: number, b: number) => a * b);
 
-print(`3x6=${Crochet.getBindableFunction(ClientBindableFunction)(3, 6)}`);
+print(`3x6=${CrochetClient.getBindableFunction(ClientBindableFunction)(3, 6)}`);
 
-Crochet.bindRemoteEvent(TestRemoteEvent, (str, bool, num) => {
+CrochetClient.bindRemoteEvent(TestRemoteEvent, (str, bool, num) => {
     print(str, bool, num);
 });
 
-const fireRemoteEvent = Crochet.getRemoteEventFunction(TestRemoteEvent);
+const fireRemoteEvent = CrochetClient.getRemoteEventFunction(TestRemoteEvent);
 fireRemoteEvent('from client', false, 42);
 
 export default {};
