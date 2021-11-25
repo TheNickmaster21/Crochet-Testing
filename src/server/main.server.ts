@@ -1,5 +1,5 @@
 import { CrochetServer, EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, Service } from '@rbxts/crochet';
-import { PromptActionText, PromptObjectText } from 'shared/attributes';
+import { NumberProperty, PromptActionText, PromptObjectText } from 'shared/attributes';
 import { PromptComponent, PromptTag } from './components/prompt.component';
 import { SpinComponent, SpinTag } from './components/spin.component';
 import { StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent } from 'shared/remotes';
@@ -52,8 +52,8 @@ CrochetServer.registerServices([
     TestService
 ]);
 
-CrochetServer.registerComponentForTag(SpinComponent, SpinTag);
-CrochetServer.registerComponents([[PromptComponent, PromptTag]]);
+CrochetServer.registerTagComponentForTag(SpinComponent, SpinTag);
+CrochetServer.registerTagComponents([[PromptComponent, PromptTag]]);
 
 CrochetServer.registerRemoteFunction(TestFunction);
 let counter = 0;
@@ -131,6 +131,29 @@ promptPart.Parent = game.Workspace;
 CrochetServer.setAttribute(promptPart, PromptObjectText, 'Prompt Part');
 CrochetServer.setAttribute(promptPart, PromptActionText, 'Interact with');
 CollectionService.AddTag(promptPart, PromptTag);
+
+function createNumberDisplayExample(i: number) {
+    const part = new Instance('Part');
+    CrochetServer.setAttribute(part, NumberProperty, i);
+    if (i < 7) {
+        part.Position = new Vector3(50, 20, 16 * i - 128);
+    } else if (i < 14) {
+        part.Position = new Vector3(16 * (i - 7) - 128, 20, 400);
+    } else if (i < 21) {
+        part.Position = new Vector3(-400, 20, 16 * (i - 14) - 128);
+    } else {
+        part.Position = new Vector3(16 * (i - 21) - 128, 20, -400);
+    }
+    part.Anchored = true;
+    part.Parent = game.Workspace;
+
+    // TODO This tag value should be in a shared place
+    CollectionService.AddTag(part, 'NUMBER_DISPLAY');
+}
+
+for (let i = 0; i < 28; i++) {
+    createNumberDisplayExample(i);
+}
 
 // These methods rely on the beta attributes feature.
 // Make sure the feature is enabled for studio before uncommenting!

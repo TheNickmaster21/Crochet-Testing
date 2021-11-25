@@ -1,4 +1,5 @@
 import { Controller, CrochetClient, FunctionDefinition } from '@rbxts/crochet';
+import { NumberDisplayComponent, NumberDisplayTag } from './components/number-display.component';
 import { StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent } from 'shared/remotes';
 
 class TestController implements Controller {
@@ -8,6 +9,8 @@ class TestController implements Controller {
 }
 
 CrochetClient.registerController(TestController);
+
+CrochetClient.registerTagComponentForTag(NumberDisplayComponent, NumberDisplayTag);
 
 CrochetClient.start().await();
 

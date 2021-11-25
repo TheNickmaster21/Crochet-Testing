@@ -14,7 +14,7 @@
         "typescript": "^4.5.2"
     },
     "dependencies": {
-        "@rbxts/crochet": "file:rbxts-crochet-1.0.0-beta.3.2.tgz",
+        "@rbxts/crochet": "^1.0.0-beta.4.0",
         "@rbxts/maid": "1.0.0-ts.1",
         "@rbxts/roact": "1.4.0-ts.1",
         "@rbxts/t": "^2.2.1"

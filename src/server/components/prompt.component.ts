@@ -1,11 +1,11 @@
 import { PromptActionText, PromptObjectText } from 'shared/attributes';
 
-import { Component } from '@rbxts/crochet/out/core';
 import { CrochetServer } from '@rbxts/crochet';
+import { TagComponent } from '@rbxts/crochet/out/core';
 
 export const PromptTag = 'PROMPT';
 
-export class PromptComponent extends Component {
+export class PromptComponent extends TagComponent {
     private changeConnections: RBXScriptConnection[] = [];
     private prompt: ProximityPrompt;
 
