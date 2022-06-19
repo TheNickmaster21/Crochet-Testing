@@ -57,8 +57,8 @@ CrochetServer.registerTagComponents([[PromptComponent, PromptTag]]);
 
 CrochetServer.registerRemoteFunction(TestFunction);
 let counter = 0;
-CrochetServer.bindServerSideRemoteFunction(TestFunction, (player: Player, test: string) => {
-    print(`${player.Name} said ${test} (${++counter})`);
+CrochetServer.bindServerSideRemoteFunction(TestFunction, (player: Player, param1: string, param2?: string) => {
+    print(`${player.Name} said ${param1} ${param2 ?? undefined} (${++counter})`);
     return 'reply from TestFunctionWrapper';
 });
 

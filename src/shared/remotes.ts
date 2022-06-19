@@ -8,7 +8,11 @@ export const TestClientFunction = new FunctionDefinition<(param: string) => stri
     t.string
 );
 
-export const TestFunction = new FunctionDefinition<(param: string) => string>('TestFunction', [t.string], t.string);
+export const TestFunction = new FunctionDefinition<(param1: string, parm2?: string) => string>(
+    'TestFunction',
+    [t.string, t.optional(t.string)],
+    t.string
+);
 
 export const StringCheckFunction = new FunctionDefinition<(param: string) => boolean>(
     'StringCheckFunction',
