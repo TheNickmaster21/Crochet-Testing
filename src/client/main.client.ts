@@ -48,5 +48,3 @@ CrochetClient.bindRemoteEvent(TestRemoteEvent, (str, bool, num) => {
 
 const fireRemoteEvent = CrochetClient.getRemoteEventFunction(TestRemoteEvent);
 fireRemoteEvent('from client', false, 42);
-
-export default {};

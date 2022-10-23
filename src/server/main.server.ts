@@ -1,5 +1,5 @@
 import { CrochetServer, EventDefinition, FunctionDefinition, OnHeartbeat, OnInit, Service } from '@rbxts/crochet';
-import { NumberProperty, PromptActionText, PromptObjectText } from 'shared/attributes';
+import { NumberProperty, PromptActionText, PromptObjectText, SecondName } from 'shared/attributes';
 import { PromptComponent, PromptTag } from './components/prompt.component';
 import { SpinComponent, SpinTag } from './components/spin.component';
 import { StringCheckFunction, TestClientFunction, TestFunction, TestRemoteEvent } from 'shared/remotes';
@@ -155,13 +155,8 @@ for (let i = 0; i < 28; i++) {
     createNumberDisplayExample(i);
 }
 
-// These methods rely on the beta attributes feature.
-// Make sure the feature is enabled for studio before uncommenting!
-// import { SecondName } from 'shared/attributes';
-// const testAttributePart = new Instance('Part');
-// Crochet.setAttribute(testAttributePart, SecondName, 'TestPartPleaseIngore');
-// print(Crochet.getAttribute(testAttributePart, SecondName));
-// Crochet.setAttribute(testAttributePart, SecondName, undefined);
-// print(Crochet.getAttribute(testAttributePart, SecondName));
-
-export default {};
+const testAttributePart = new Instance('Part');
+CrochetServer.setAttribute(testAttributePart, SecondName, 'TestPartPleaseIngore');
+print(CrochetServer.getAttribute(testAttributePart, SecondName));
+CrochetServer.setAttribute(testAttributePart, SecondName, undefined);
+print(CrochetServer.getAttribute(testAttributePart, SecondName));
