@@ -4,6 +4,7 @@
         "isolatedModules": true,
         "downlevelIteration": true,
         "module": "commonjs",
+        "moduleDetection": "force",
         "moduleResolution": "Node",
         "noLib": true,
         "strict": true,
